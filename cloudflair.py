@@ -218,19 +218,19 @@ if __name__ == "__main__":
     
     # Always enabled free providers
     base_providers.append(CrtShProvider(check_subdomains=args.check_subdomains))
-    base_providers.append(AlienVaultProvider())
+    base_providers.append(AlienVaultProvider(check_subdomains=args.check_subdomains))
     
     # Providers requiring auth
     if censys_api_id and censys_api_secret:
-        base_providers.append(CensysProvider(censys_api_id, censys_api_secret))
+        base_providers.append(CensysProvider(censys_api_id, censys_api_secret, check_subdomains=args.check_subdomains))
     if censys_platform_token:
-        base_providers.append(CensysPlatformProvider(censys_platform_token, censys_platform_org_id))
+        base_providers.append(CensysPlatformProvider(censys_platform_token, censys_platform_org_id, check_subdomains=args.check_subdomains))
     if shodan_key:
-        base_providers.append(ShodanProvider(shodan_key))
+        base_providers.append(ShodanProvider(shodan_key, check_subdomains=args.check_subdomains))
     if binaryedge_key:
-        base_providers.append(BinaryEdgeProvider(binaryedge_key))
+        base_providers.append(BinaryEdgeProvider(binaryedge_key, check_subdomains=args.check_subdomains))
     if certkit_key:
-        base_providers.append(CertKitProvider(certkit_key))
+        base_providers.append(CertKitProvider(certkit_key, check_subdomains=args.check_subdomains))
 
     # If --provider was specifically passed, filter the list down
     if hasattr(args, 'provider') and args.provider:

@@ -4,7 +4,8 @@ from typing import Set
 from .base import BaseProvider
 
 class BinaryEdgeProvider(BaseProvider):
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str, check_subdomains=False):
+        super().__init__(check_subdomains)
         self.api_key = api_key
         self.headers = {'X-Key': self.api_key}
 
@@ -13,6 +14,12 @@ class BinaryEdgeProvider(BaseProvider):
             return set()
             
         subdomains = set()
+        
+        if not self.check_subdomains:
+             # Binaryedge Domain API isn't exactly mapping 1:1 for "exact" vs "subdomains", 
+             # but we'll stick to not pulling if the flag is off to stay consistent.
+             return subdomains
+             
         url = f"https://api.binaryedge.io/v2/query/domains/subdomain/{domain}"
         
         try:

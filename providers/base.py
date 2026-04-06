@@ -2,6 +2,9 @@ from abc import ABC, abstractmethod
 from typing import Set
 
 class BaseProvider(ABC):
+    def __init__(self, check_subdomains: bool = False):
+        self.check_subdomains = check_subdomains
+
     def get_subdomains(self, domain: str) -> Set[str]:
         """Search for potential subdomains related to the domain."""
         return set()

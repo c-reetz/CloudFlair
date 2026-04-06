@@ -12,7 +12,8 @@ RATE_LIMIT = "[-] Looks like you exceeded your Censys account limits rate. Exiti
 CERT_CHUNK_SIZE = 25
 
 class CensysProvider(BaseProvider):
-    def __init__(self, api_id, api_secret):
+    def __init__(self, api_id, api_secret, check_subdomains=False):
+        super().__init__(check_subdomains)
         self.api_id = api_id
         self.api_secret = api_secret
 
@@ -22,7 +23,8 @@ class CensysProvider(BaseProvider):
                 api_id=self.api_id, api_secret=self.api_secret, user_agent=USER_AGENT
             )
 
-            certificate_query = f"names: {domain} and parsed.signature.valid: true and not names: cloudflaressl.com"
+            prefix = "*." if self.check_subdomains else ""
+            certificate_query = f'names: "{prefix}{domain}" and parsed.signature.valid: true and not names: "cloudflaressl.com"'
             certificates_search_results = censys_certificates.search(
                 certificate_query, per_page=100, pages=pages
             )

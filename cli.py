@@ -23,7 +23,7 @@ parser.add_argument(
 
 parser.add_argument(
     '--check-subdomains',
-    help = 'Query crt.sh for subdomains (*.domain) instead of exact domain match. Specifically used by the crtsh provider.',
+    help = 'Query all search providers for subdomains (*.domain) instead of exact domain match.',
     dest = 'check_subdomains',
     action = 'store_true',
     default = False

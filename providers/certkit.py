@@ -4,7 +4,8 @@ from typing import Set
 from .base import BaseProvider
 
 class CertKitProvider(BaseProvider):
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str, check_subdomains=False):
+        super().__init__(check_subdomains)
         self.api_key = api_key
 
     def get_subdomains(self, domain: str) -> Set[str]:
@@ -14,7 +15,8 @@ class CertKitProvider(BaseProvider):
         subdomains = set()
         # Note: Depending on CertKit's actual live API endpoints, this URL might need updating.
         # This is built around standard CT search behaviors typical for such platforms.
-        url = f"https://api.certkit.io/v1/certs/search?domain={domain}&include_subdomains=true"
+        include_sub_str = "true" if self.check_subdomains else "false"
+        url = f"https://api.certkit.io/v1/certs/search?domain={domain}&include_subdomains={include_sub_str}"
         headers = {'Authorization': f'Bearer {self.api_key}'}
         
         try:

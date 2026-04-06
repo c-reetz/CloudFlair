@@ -13,7 +13,8 @@ INVALID_CREDS = "[-] Your Censys Platform credentials look invalid. Are you usin
 RATE_LIMIT = "[-] Looks like you exceeded your Censys Platform account limits rate. Exiting\n"
 
 class CensysPlatformProvider(BaseProvider):
-    def __init__(self, api_token, org_id=None):
+    def __init__(self, api_token, org_id=None, check_subdomains=False):
+        super().__init__(check_subdomains)
         if 'censys_platform' not in sys.modules:
             sys.stderr.write("[-] Missing 'censys-platform' library. Install it with pip.\n")
             exit(1)
@@ -25,7 +26,8 @@ class CensysPlatformProvider(BaseProvider):
             sdk = SDK(personal_access_token=self.api_token)
             
             # Using global data search from CensysPlatformClient for certificates
-            query = f'cert.names: {domain} and cert.parsed.signature.valid: true and not cert.names: cloudflaressl.com'
+            prefix = "*." if self.check_subdomains else ""
+            query = f'cert.names: "{prefix}{domain}" and cert.parsed.signature.valid: true and not cert.names: "cloudflaressl.com"'
             
             # Search global data 
             response = sdk.global_data.search(

@@ -4,7 +4,8 @@ from typing import Set
 from .base import BaseProvider
 
 class ShodanProvider(BaseProvider):
-    def __init__(self, api_key: str): # Only requires one API key
+    def __init__(self, api_key: str, check_subdomains=False):
+        super().__init__(check_subdomains)
         self.api_key = api_key
 
     def get_ips_by_cert(self, fingerprints: Set[str]) -> Set[str]:
