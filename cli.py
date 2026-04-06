@@ -14,6 +14,22 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    '--provider',
+    help = 'Which provider to use for finding candidate IPs (censys or crtsh)',
+    choices=['censys', 'crtsh'],
+    dest = 'provider',
+    default=None
+)
+
+parser.add_argument(
+    '--check-subdomains',
+    help = 'Query crt.sh for subdomains (*.domain) instead of exact domain match. Specifically used by the crtsh provider.',
+    dest = 'check_subdomains',
+    action = 'store_true',
+    default = False
+)
+
+parser.add_argument(
     '--censys-api-id',
     help = 'Censys API ID. Can also be defined using the CENSYS_API_ID environment variable',
     dest = 'censys_api_id'

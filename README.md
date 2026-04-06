@@ -1,12 +1,14 @@
-# CloudFlair
+# CloudFlair (Modular Fork)
 
-**Important note: As of late 2024, Censys does not provide API access to free accounts anymore. This means CloudFlair does not work with free Censys accounts anymore**.
+**Note: This is a fork of the original [CloudFlair](https://github.com/christophetd/CloudFlair) project, refactored to support a modular provider system.**
 
 CloudFlair is a tool to find origin servers of websites protected by CloudFlare (or CloudFront) which are publicly exposed and don't appropriately restrict network access to the relevant CDN IP ranges.
 
-The tool uses Internet-wide scan data from [Censys](https://censys.io) to find exposed IPv4 hosts presenting an SSL certificate associated with the target's domain name. API keys are required and can be retrieved from your [Censys account](https://search.censys.io/account/api).
+The tool uses multiple providers to find candidate origin servers:
+- **Censys**: Uses Internet-wide scan data to find exposed IPv4 hosts presenting an SSL certificate associated with the target's domain name. API keys are required.
+- **crt.sh**: Uses certificate transparency logs to find subdomains and resolves them to IPv4 addresses. This is the default provider and does not require an API key.
 
-For more detail about this common misconfiguration and how CloudFlair works, refer to the companion blog post at <https://blog.christophetd.fr/bypassing-cloudflare-using-internet-wide-scan-data/>.
+For more detail about the general technique, refer to the original project or the blog post at <https://blog.christophetd.fr/bypassing-cloudflare-using-internet-wide-scan-data/>.
 
 Here's what CloudFlair looks like in action.
 
@@ -93,7 +95,7 @@ python cloudflair.py myvulnerable.site --cloudfront
 ```bash
 $ python cloudflair.py --help
 
-usage: cloudflair.py [-h] [-o OUTPUT_FILE] [--censys-api-id CENSYS_API_ID] [--censys-api-secret CENSYS_API_SECRET] [--cloudfront] domain
+usage: cloudflair.py [-h] [-o OUTPUT_FILE] [--provider {censys,crtsh}] [--check-subdomains] [--censys-api-id CENSYS_API_ID] [--censys-api-secret CENSYS_API_SECRET] [--cloudfront] domain
 
 positional arguments:
   domain                The domain to scan
@@ -102,6 +104,9 @@ options:
   -h, --help            show this help message and exit
   -o OUTPUT_FILE, --output OUTPUT_FILE
                         A file to output likely origin servers to (default: None)
+  --provider {censys,crtsh}
+                        Which provider to use for finding candidate IPs (censys or crtsh) (default: None)
+  --check-subdomains    Query crt.sh for subdomains (*.domain) instead of exact domain match. Specifically used by the crtsh provider. (default: False)
   --censys-api-id CENSYS_API_ID
                         Censys API ID. Can also be defined using the CENSYS_API_ID environment variable (default: None)
   --censys-api-secret CENSYS_API_SECRET
@@ -127,6 +132,10 @@ CENSYS_API_SECRET=your-secret
 $ docker run --rm --env-file=censys.env christophetd/cloudflair myvulnerable.site
 ```
 
+## Contributing
+
+This fork is designed to be extensible. If you have ideas for new providers (e.g., BinaryEdge, Shodan, etc.), please [open an issue](https://github.com/christophetd/cloudflair/issues/new) to request them or submit a pull request!
+
 ## Compatibility
 
-Tested on Python 3.6. Feel free to [open an issue](https://github.com/christophetd/cloudflair/issues/new) if you have bug reports or questions.
+Tested on Python 3.6+. Feel free to [open an issue](https://github.com/christophetd/cloudflair/issues/new) if you have bug reports or questions.
