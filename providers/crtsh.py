@@ -6,7 +6,7 @@ class CrtShProvider(BaseProvider):
     def __init__(self, check_subdomains=False):
         self.check_subdomains = check_subdomains
 
-    def search(self, domain: str) -> set:
+    def get_subdomains(self, domain: str) -> set:
         prefix = "%." if self.check_subdomains else ""
         action_word = "subdomains of " if self.check_subdomains else ""
         print(f'[*] Querying crt.sh for {action_word}{domain}...')
@@ -18,12 +18,16 @@ class CrtShProvider(BaseProvider):
                 print(f"[-] crt.sh responded with status code {response.status_code}")
                 return set()
             data = response.json()
+            if not isinstance(data, list):
+                return set()
         except Exception as e:
             print(f"[-] Failed to query crt.sh: {e}")
             return set()
 
         subdomains = set()
         for entry in data:
+            if not isinstance(entry, dict):
+                continue
             name_value = entry.get('name_value', '')
             for sub in name_value.split('\n'):
                 sub = sub.strip()
@@ -31,7 +35,10 @@ class CrtShProvider(BaseProvider):
                     subdomains.add(sub)
                     
         print(f"[*] Found {len(subdomains)} unique subdomains from crt.sh.")
-        
+        return subdomains
+
+    def search(self, domain: str) -> set:
+        subdomains = self.get_subdomains(domain)
         hosts = set()
         print("[*] Resolving subdomains to IPv4 addresses...")
         for sub in subdomains:

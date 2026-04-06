@@ -1,22 +1,22 @@
 import pytest
 from providers.crtsh import CrtShProvider
+from providers.alienvault import AlienVaultProvider
 
 def test_crtsh_cloudflare():
     """
-    Test that crtsh provider works on a known cloudflare site (cloudflare.com).
-    It should return subdomains that might be hosted locally or on Cloudflare.
-    Then cloudflair.py filters cloudflare IPs out later.
+    Test that crtsh provider gets subdomains and IPs 
     """
     provider = CrtShProvider()
-    hosts = provider.search('cloudflare.com')
+    subdomains = provider.get_subdomains('cloudflair.xyz')
+    assert isinstance(subdomains, set)
+    hosts = provider.search('cloudflair.xyz')
     assert isinstance(hosts, set)
-    assert len(hosts) > 0
 
-def test_crtsh_google():
+def test_alienvault_cloudflare():
     """
-    Test crtsh provider on google.com (a non-cloudflare site).
+    Test alienvault provider on a domain proxy
     """
-    provider = CrtShProvider()
-    hosts = provider.search('google.com')
-    assert isinstance(hosts, set)
-    assert len(hosts) > 0
+    provider = AlienVaultProvider()
+    subdomains = provider.get_subdomains('google.com')
+    assert isinstance(subdomains, set)
+

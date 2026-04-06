@@ -41,7 +41,15 @@ def filter_cloudfront_ips(ips):
     return [ ip for ip in ips if not cloudfront_utils.is_cloudfront_ip(ip) ]
 
 
-def find_hosts(domain, provider, use_cloudfront):
+def get_ip_from_subdomain(subdomain):
+    try:
+        import dns.resolver
+        answers = dns.resolver.resolve(subdomain, 'A') if hasattr(dns.resolver, 'resolve') else dns.resolver.query(subdomain, 'A')
+        return [rdata.address if hasattr(rdata, 'address') else str(rdata) for rdata in answers]
+    except Exception:
+        return []
+
+def find_hosts(domain, providers, use_cloudfront):
     if not dns_utils.is_valid_domain(domain):
         sys.stderr.write('[-] The domain "%s" looks invalid.\n' % domain)
         exit(1)
@@ -60,7 +68,29 @@ def find_hosts(domain, provider, use_cloudfront):
 
         print('[*] The target appears to be behind CloudFront.')
 
-    hosts = provider.search(domain)
+    print('\n[*] Phase 1: Discovery (Subdomains & Certificates)')
+    subdomains = set([domain])
+    cert_fingerprints = set()
+    
+    for p in providers:
+        subdomains.update(p.get_subdomains(domain))
+        cert_fingerprints.update(p.get_certificates(domain))
+        
+    print(f'[*] Discovered {len(subdomains)} subdomains and {len(cert_fingerprints)} certificate fingerprints.')
+
+    print('\n[*] Phase 2: DNS Resolution')
+    hosts = set()
+    for sub in subdomains:
+        hosts.update(get_ip_from_subdomain(sub))
+        
+    print('\n[*] Phase 3: IP Scanning via Cert Fingerprints')
+    if cert_fingerprints:
+        for p in providers:
+            hosts.update(p.get_ips_by_cert(cert_fingerprints))
+
+    # Old search hook compatibility
+    for p in providers:
+        hosts.update(p.search(domain))
 
     hosts = filter_cloudflare_ips(hosts) if not use_cloudfront else filter_cloudfront_ips(hosts)
     print('[*] %d candidate IPv4 hosts were found.' % len(hosts))
@@ -159,8 +189,8 @@ def find_origins(domain, candidates):
     return origins
 
 
-def main(domain, output_file, provider, use_cloudfront):
-    hosts = find_hosts(domain, provider, use_cloudfront)
+def main(domain, output_file, providers, use_cloudfront):
+    hosts = find_hosts(domain, providers, use_cloudfront)
     print_hosts(hosts)
     origins = find_origins(domain, hosts)
 
@@ -169,32 +199,35 @@ def main(domain, output_file, provider, use_cloudfront):
         exit(0)
 
     print('')
-    print('[*] Found %d likely origin servers of %s!' % (len(origins), domain))
+    print('[*] Verification Phase: Found %d likely origin servers of %s!' % (len(origins), domain))
     print_origins(origins)
     save_origins_to_file(origins, output_file)
 
 if __name__ == "__main__":
     args = cli.parser.parse_args()
 
-    censys_api_id = os.environ.get('CENSYS_API_ID')
-    censys_api_secret = os.environ.get('CENSYS_API_SECRET')
+    censys_api_id = args.censys_api_id or os.environ.get('CENSYS_API_ID')
+    censys_api_secret = args.censys_api_secret or os.environ.get('CENSYS_API_SECRET')
+    shodan_key = getattr(args, 'shodan_api_key', None) or os.environ.get('SHODAN_API_KEY')
+    binaryedge_key = getattr(args, 'binaryedge_api_key', None) or os.environ.get('BINARYEDGE_API_KEY')
+    certkit_key = getattr(args, 'certkit_api_key', None) or os.environ.get('CERTKIT_API_KEY')
 
-    if args.censys_api_id and args.censys_api_secret:
-        censys_api_id = args.censys_api_id
-        censys_api_secret = args.censys_api_secret
+    from providers import CensysProvider, CrtShProvider, ShodanProvider, BinaryEdgeProvider, CertKitProvider, AlienVaultProvider
 
-    provider_name = args.provider
-    if not provider_name:
-        # Default to censys if credentials exist to maintain some backwards compatibility
-        # If no credentials, default to crtsh
-        if censys_api_id and censys_api_secret:
-            provider_name = 'censys'
-        else:
-            provider_name = 'crtsh'
-
-    if provider_name == 'censys' and (not censys_api_id or not censys_api_secret):
-        sys.stderr.write('[!] Please set your Censys API ID and secret from your environment (CENSYS_API_ID and CENSYS_API_SECRET) or use the --provider crtsh.\n')
-        exit(1)
-    provider = get_provider(provider_name, api_id=censys_api_id, api_secret=censys_api_secret, check_subdomains=args.check_subdomains)
+    base_providers = []
     
-    main(args.domain, args.output_file, provider, args.use_cloudfront)
+    # Always enabled free providers
+    base_providers.append(CrtShProvider(check_subdomains=args.check_subdomains))
+    base_providers.append(AlienVaultProvider())
+    
+    # Providers requiring auth
+    if censys_api_id and censys_api_secret:
+        base_providers.append(CensysProvider(censys_api_id, censys_api_secret))
+    if shodan_key:
+        base_providers.append(ShodanProvider(shodan_key))
+    if binaryedge_key:
+        base_providers.append(BinaryEdgeProvider(binaryedge_key))
+    if certkit_key:
+        base_providers.append(CertKitProvider(certkit_key))
+
+    main(args.domain, args.output_file, base_providers, args.use_cloudfront)

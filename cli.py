@@ -42,6 +42,24 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    '--shodan-api-key',
+    help = 'Shodan API Key. Can also be defined using the SHODAN_API_KEY environment variable',
+    dest = 'shodan_api_key'
+)
+
+parser.add_argument(
+    '--binaryedge-api-key',
+    help = 'BinaryEdge API Key. Can also be defined using the BINARYEDGE_API_KEY environment variable',
+    dest = 'binaryedge_api_key'
+)
+
+parser.add_argument(
+    '--certkit-api-key',
+    help = 'CertKit API Key. Can also be defined using the CERTKIT_API_KEY environment variable',
+    dest = 'certkit_api_key'
+)
+
+parser.add_argument(
     '--cloudfront',
     help = 'Check Cloudfront instead of CloudFlare.',
     dest = 'use_cloudfront',
