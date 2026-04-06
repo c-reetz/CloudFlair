@@ -15,8 +15,8 @@ parser.add_argument(
 
 parser.add_argument(
     '--provider',
-    help = 'Which provider to use for finding candidate IPs (censys or crtsh)',
-    choices=['censys', 'crtsh'],
+    help = 'Which provider to use for finding candidate IPs (censys, censys-platform, or crtsh)',
+    choices=['censys', 'censys-platform', 'crtsh'],
     dest = 'provider',
     default=None
 )
@@ -39,6 +39,12 @@ parser.add_argument(
     '--censys-api-secret',
     help = 'Censys API secret. Can also be defined using the CENSYS_API_SECRET environment variable',
     dest = 'censys_api_secret'
+)
+
+parser.add_argument(
+    '--censys-platform-token',
+    help = 'Censys Platform Personal Access Token. Can also be defined using the CENSYS_PLATFORM_TOKEN environment variable',
+    dest = 'censys_platform_token'
 )
 
 parser.add_argument(

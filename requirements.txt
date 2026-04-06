@@ -1,5 +1,6 @@
 backoff==2.2.1
 censys==2.2.0
+censys-platform==0.13.4
 certifi==2026.2.25
 charset-normalizer==3.4.7
 cssselect==1.4.0

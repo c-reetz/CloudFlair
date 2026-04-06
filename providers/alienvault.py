@@ -4,7 +4,7 @@ from .base import BaseProvider
 
 class AlienVaultProvider(BaseProvider):
     def __init__(self):
-        pass # No API key required for this endpoint generally, or not strict
+        pass #todo: add API key auth....
 
     def get_subdomains(self, domain: str) -> Set[str]:
         subdomains = set()
@@ -12,8 +12,6 @@ class AlienVaultProvider(BaseProvider):
         
         try:
             print(f"[*] Querying AlienVault OTX for subdomains of {domain}...")
-            # Use headers to appear somewhat normal
-            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
             response = requests.get(url, headers=headers, timeout=15)
             
             if response.status_code == 200:

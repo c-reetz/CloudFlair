@@ -20,8 +20,7 @@ config = {
 
 CERT_CHUNK_SIZE = 25
 
-
-# Returns a legitimate looking user-agent
+# todo: switch to HTTP request lib with TLS emulation.
 def get_user_agent():
     user_agents = [
         "Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0",
@@ -208,11 +207,12 @@ if __name__ == "__main__":
 
     censys_api_id = args.censys_api_id or os.environ.get('CENSYS_API_ID')
     censys_api_secret = args.censys_api_secret or os.environ.get('CENSYS_API_SECRET')
+    censys_platform_token = args.censys_platform_token or os.environ.get('CENSYS_PLATFORM_TOKEN')
     shodan_key = getattr(args, 'shodan_api_key', None) or os.environ.get('SHODAN_API_KEY')
     binaryedge_key = getattr(args, 'binaryedge_api_key', None) or os.environ.get('BINARYEDGE_API_KEY')
     certkit_key = getattr(args, 'certkit_api_key', None) or os.environ.get('CERTKIT_API_KEY')
 
-    from providers import CensysProvider, CrtShProvider, ShodanProvider, BinaryEdgeProvider, CertKitProvider, AlienVaultProvider
+    from providers import CensysProvider, CensysPlatformProvider, CrtShProvider, ShodanProvider, BinaryEdgeProvider, CertKitProvider, AlienVaultProvider
 
     base_providers = []
     
@@ -223,11 +223,22 @@ if __name__ == "__main__":
     # Providers requiring auth
     if censys_api_id and censys_api_secret:
         base_providers.append(CensysProvider(censys_api_id, censys_api_secret))
+    if censys_platform_token:
+        base_providers.append(CensysPlatformProvider(censys_platform_token))
     if shodan_key:
         base_providers.append(ShodanProvider(shodan_key))
     if binaryedge_key:
         base_providers.append(BinaryEdgeProvider(binaryedge_key))
     if certkit_key:
         base_providers.append(CertKitProvider(certkit_key))
+
+    # If --provider was specifically passed, filter the list down
+    if hasattr(args, 'provider') and args.provider:
+        if args.provider == 'censys-platform':
+            base_providers = [p for p in base_providers if isinstance(p, CensysPlatformProvider)]
+        elif args.provider == 'censys':
+            base_providers = [p for p in base_providers if isinstance(p, CensysProvider)]
+        elif args.provider == 'crtsh':
+            base_providers = [p for p in base_providers if isinstance(p, CrtShProvider)]
 
     main(args.domain, args.output_file, base_providers, args.use_cloudfront)
