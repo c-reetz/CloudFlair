@@ -48,6 +48,12 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    '--censys-platform-org-id',
+    help = 'Censys Platform Organization ID. Can also be defined using the CENSYS_PLATFORM_ORG_ID environment variable',
+    dest = 'censys_platform_org_id'
+)
+
+parser.add_argument(
     '--shodan-api-key',
     help = 'Shodan API Key. Can also be defined using the SHODAN_API_KEY environment variable',
     dest = 'shodan_api_key'

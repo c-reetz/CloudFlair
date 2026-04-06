@@ -13,29 +13,33 @@ INVALID_CREDS = "[-] Your Censys Platform credentials look invalid. Are you usin
 RATE_LIMIT = "[-] Looks like you exceeded your Censys Platform account limits rate. Exiting\n"
 
 class CensysPlatformProvider(BaseProvider):
-    def __init__(self, api_token):
+    def __init__(self, api_token, org_id=None):
         if 'censys_platform' not in sys.modules:
             sys.stderr.write("[-] Missing 'censys-platform' library. Install it with pip.\n")
             exit(1)
         self.api_token = api_token
+        self.org_id = org_id
 
     def get_certificates(self, domain: str) -> set:
         try:
             sdk = SDK(personal_access_token=self.api_token)
             
-            # Using unified search from CensysPlatformClient for certificates
+            # Using global data search from CensysPlatformClient for certificates
             query = f'cert.names: {domain} and cert.parsed.signature.valid: true and not cert.names: cloudflaressl.com'
             
             # Search global data 
-            response = sdk.global_search.search(
-                query=query, 
-                resource_type="certificate",
-                per_page=100
+            response = sdk.global_data.search(
+                search_query_input_body={
+                    "query": query, 
+                    "page_size": 100
+                },
+                organization_id=self.org_id
             )
 
             fingerprints = set()
             # Extract fingerprint from the search response
-            for hit in response.get("hits", []):
+            results = response.get("results", []) if isinstance(response, dict) else getattr(response, "results", [])
+            for hit in results:
                 if 'cert.fingerprint_sha256' in hit:
                     fingerprints.add(hit['cert.fingerprint_sha256'])
                 elif 'fingerprint_sha256' in hit:
@@ -62,13 +66,16 @@ class CensysPlatformProvider(BaseProvider):
             hosts = set()
             for fp in cert_fingerprints_list:
                 query = f'host.services.tls.certificates.leaf_data.fingerprint_sha256="{fp}"'
-                response = sdk.global_search.search(
-                    query=query,
-                    resource_type="host",
-                    per_page=100
+                response = sdk.global_data.search(
+                    search_query_input_body={
+                        "query": query,
+                        "page_size": 100
+                    },
+                    organization_id=self.org_id
                 )
                 
-                for hit in response.get("hits", []):
+                results = response.get("results", []) if isinstance(response, dict) else getattr(response, "results", [])
+                for hit in results:
                     ip = hit.get("host.ip") or hit.get("ip")
                     if ip:
                         # Extract the IP string, it might be a list sometimes

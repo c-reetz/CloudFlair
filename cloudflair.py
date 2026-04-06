@@ -9,7 +9,6 @@ import urllib3
 from html_similarity import similarity
 import cli
 import random
-from providers import get_provider
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -208,6 +207,7 @@ if __name__ == "__main__":
     censys_api_id = args.censys_api_id or os.environ.get('CENSYS_API_ID')
     censys_api_secret = args.censys_api_secret or os.environ.get('CENSYS_API_SECRET')
     censys_platform_token = args.censys_platform_token or os.environ.get('CENSYS_PLATFORM_TOKEN')
+    censys_platform_org_id = getattr(args, 'censys_platform_org_id', None) or os.environ.get('CENSYS_PLATFORM_ORG_ID')
     shodan_key = getattr(args, 'shodan_api_key', None) or os.environ.get('SHODAN_API_KEY')
     binaryedge_key = getattr(args, 'binaryedge_api_key', None) or os.environ.get('BINARYEDGE_API_KEY')
     certkit_key = getattr(args, 'certkit_api_key', None) or os.environ.get('CERTKIT_API_KEY')
@@ -224,7 +224,7 @@ if __name__ == "__main__":
     if censys_api_id and censys_api_secret:
         base_providers.append(CensysProvider(censys_api_id, censys_api_secret))
     if censys_platform_token:
-        base_providers.append(CensysPlatformProvider(censys_platform_token))
+        base_providers.append(CensysPlatformProvider(censys_platform_token, censys_platform_org_id))
     if shodan_key:
         base_providers.append(ShodanProvider(shodan_key))
     if binaryedge_key:
